@@ -1,6 +1,7 @@
 import re
 import numpy as np
-from helper.utils import load_data
+from utils import load_data
+from functools import partial
 from nltk.stem import PorterStemmer
 from collections.abc import Iterable
 
@@ -46,6 +47,7 @@ def produce_base_data(path):
     active_app_events = app_events[app_events['is_active']==1]
     events = data_dict['events'].copy()
     events = process_events(events)
+    events = events.merge(data_dict['phone_brand_device_model'],how='left',on='device_id')
         
     base_data = {'label_cate':label_cate,
                  'app_labels':app_labels,
@@ -54,4 +56,23 @@ def produce_base_data(path):
                  'events':events}
     return base_data
 
+def temporal_prefix(row,row_col,target_col):
+    def add_prefix(char,prefix):
+        if type(prefix) != str:
+            prefix = str(prefix)
+        if not prefix.endswith('_'):
+            return prefix + '_' + char
+        else:
+            return prefix + char
+        
+    tp = row[row_col]
+    content = row[target_col].split()
+    if len(content) > 0:
+        func = partial(add_prefix,prefix=tp)
+        new_content = ' '.join(map(func,content))
+        return new_content
+    else:
+        return ''
+
 #%%
+#base_data = produce_base_data('data')
