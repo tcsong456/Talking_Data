@@ -8,6 +8,8 @@ __pycache__/
 
 #self added
 data/*
+temp_data/*
+inp/*
 
 # Distribution / packaging
 .Python

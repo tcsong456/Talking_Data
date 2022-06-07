@@ -37,9 +37,7 @@ def process_events(events):
     events['time_zone'] = events['hour'].map(split_time_zone)
     return events
 
-def produce_base_data(path):
-    data_dict = load_data(path)
-    
+def produce_base_data(data_dict):
     label_cate = data_dict['label_categories'].copy()
     label_cate['category'] = label_cate['category'].fillna('').map(preprocess_category)
     app_labels = data_dict['app_labels'].copy()
@@ -75,4 +73,3 @@ def temporal_prefix(row,row_col,target_col):
         return ''
 
 #%%
-#base_data = produce_base_data('data')
