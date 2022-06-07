@@ -144,7 +144,7 @@ class TopicTimeZoneCombineApp(BaseTopicCombineApp):
     def __call__(self,data_dict):
         device_combine_app,active_device_combine_app = super().__call__(data_dict)
         device_tz_combine_app = self._add_prefix('time_zone',device_combine_app,'app_id')
-        device_active_tz_combine_app = self._add_prefix('time_zone',device_tz_combine_app,'app_id')
+        device_active_tz_combine_app = self._add_prefix('time_zone',active_device_combine_app,'app_id')
         device_tz_combine_app = device_tz_combine_app.groupby('device_id')['app_id'].apply(list).map(join_string)
         device_active_tz_combine_app = device_active_tz_combine_app.groupby('device_id')['app_id'].apply(list).map(join_string)
         device_active_tz_combine_app = self.all_device_id.merge(device_active_tz_combine_app,how='left',on='device_id').fillna('')
@@ -155,7 +155,7 @@ class TopicPbrandCombineApp(BaseTopicCombineApp):
     def __call__(self,data_dict):
         device_combine_app,active_device_combine_app = super().__call__(data_dict)
         device_pbrand_combine_app = self._add_prefix('phone_brand',device_combine_app,'app_id')
-        device_active_pbrand_combine_app = self._add_prefix('phone_brand',device_pbrand_combine_app,'app_id')
+        device_active_pbrand_combine_app = self._add_prefix('phone_brand',active_device_combine_app,'app_id')
         device_pbrand_combine_app = device_pbrand_combine_app.groupby('device_id')['app_id'].apply(list).map(join_string)
         device_active_pbrand_combine_app = device_active_pbrand_combine_app.groupby('device_id')['app_id'].apply(list).map(join_string)
         device_active_pbrand_combine_app = self.all_device_id.merge(device_active_pbrand_combine_app,how='left',on='device_id').fillna('')
@@ -163,10 +163,3 @@ class TopicPbrandCombineApp(BaseTopicCombineApp):
         return device_pbrand_combine_app,device_active_pbrand_combine_app
 
 #%%
-from utils import Timer
-with Timer():
-    tc = TopicTimeZoneCombineApp()
-    z = tc(base_data)
-
-            #%%
-z[1]
