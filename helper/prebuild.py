@@ -32,7 +32,7 @@ class BaseTopicLabel:
         app_labels = app_labels.groupby('app_id')['label_id'].apply(list).map(join_string)
         device_labels = self._device_feature(data_dict,app_labels,event_col='app_events')
         active_device_labels = self._device_feature(data_dict,app_labels,event_col='active_app_events')
-        device = device_labels.groupby('device_id')['label_id'].size()
+        device = device_labels.groupby('device_id').size()
         self.all_device_ids = device.reset_index()[['device_id']]
         return device_labels,active_device_labels
 
@@ -78,7 +78,7 @@ class BaseTopicApp(BaseTopicLabel):
     def __call__(self,data_dict):
         device_app = self._device_feature(data_dict,'app_events')
         active_device_app = self._device_feature(data_dict,'active_app_events')
-        device = device_app.groupby('device_id')['app_id'].size()
+        device = device_app.groupby('device_id').size()
         self.all_device_id = device.reset_index()[['device_id']]
         return device_app,active_device_app
 
@@ -127,7 +127,7 @@ class BaseTopicCombineApp(BaseTopicLabel):
         apps = app_labels.groupby('app_id')['label_id'].apply(list).map(sorted).map(lambda row:' '.join(list(map(str,row)))).map(hash).to_frame('hash_id')
         device_combine_app = self._device_feature(data_dict,apps,'app_events')
         active_device_combine_app = self._device_feature(data_dict,apps,'active_app_events')
-        device = device_combine_app.groupby('device_id')['app_id'].size()
+        device = device_combine_app.groupby('device_id').size()
         self.all_device_id = device.reset_index()[['device_id']]
         return device_combine_app,active_device_combine_app
 
