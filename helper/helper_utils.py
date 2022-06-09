@@ -50,7 +50,8 @@ def mean_encoding(data,feat,target_name,target=None,outer_splits=20,innter_split
     output.rename(columns={'target_mean':target_name},inplace=1)
     output.set_index(feat,inplace=True)
     target_output.rename(columns={feat:target_name},inplace=True)
-    target_output.index = target[feat]
+    target_output[feat] = target[feat]
+    target_output.set_index(feat,inplace=True)
 
     return output.astype(np.float32),target_output.astype(np.float32)
 
@@ -61,8 +62,8 @@ def assemble_mean_encodes(label,test,feat_name,target_cols):
         valid_index = data.loc[valid_mask,'device_id'].tolist()
         invalid_index = data.loc[~valid_mask,'device_id'].tolist()
         valid_encodes,invalid_encodes = encodes[valid_mask],encodes[~valid_mask]
-        valid_encodes.index = valid_index
-        invalid_encodes.index = invalid_index
+        valid_encodes['device_id'] = valid_index;valid_encodes.set_index('device_id',inplace=True)
+        invalid_encodes['device_id'] = invalid_index;invalid_encodes.set_index('device_id',inplace=True)
         fill_value = np.full(invalid_encodes.shape,fill_value=-1)
         invalid_encodes = pd.DataFrame(fill_value,columns=invalid_encodes.columns,index=invalid_encodes.index)
         encodes = pd.concat([valid_encodes,invalid_encodes])

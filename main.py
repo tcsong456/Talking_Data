@@ -18,7 +18,8 @@ from utils import (logger,
                    Timer)
 from functools import partial
 from multiprocessing  import Pool
-from trainer import NoEventStackSaver
+from trainer import (NoEventStackSaver,
+                     WholeNoEventStackSaver)
 
 def save_topic_data(topic_func,data,args,cate_mode):
     topic_func = topic_func()
@@ -42,9 +43,9 @@ def main():
     add_argument('--temp_data_path',type=str,default='temp_data',help='path to save topic feature data')
     add_argument('--data_path',type=str,default='data',help='the path to load real data')
     add_argument('--num_of_cores',type=int,default=5,help='number of cores to use for multiprocessing')
-    add_argument('--mode',type=str,choices=['no_eve','eve'])
     add_argument('--n_folds',type=int,default=5)
     add_argument('--random_state',type=int,default=7951)
+    add_argument('--mode',type=str,choices=['no_eve_submit','eve_submit'])
     args = parser.parse_args()
     
     os.makedirs(args.temp_data_path,exist_ok=True)
@@ -61,18 +62,24 @@ def main():
 #        pool.join()
 #    save_topic_data(TopicCategory,base_data,args,cate_mode=True)
     
-    no_eve_stacker = NoEventStackSaver(n_folds=args.n_folds,
-                                       data_dict=base_data,
-                                       random_state=args.random_state)
+    if args.mode == 'eve_submit':
+        no_eve_stacker = NoEventStackSaver(n_folds=args.n_folds,
+                                           data_dict=base_data,
+                                           random_state=args.random_state)
+    elif args.mode == 'no_eve_submit':
+        no_eve_stacker = WholeNoEventStackSaver(n_folds=args.n_folds,
+                                                data_dict=base_data,
+                                                random_state=args.random_state)
+        
     with Timer(message='start building no_eve features'):
         for split_func in ['le_split','oh_split','mean_split','freq_split']:
             no_eve_stacker.save(split_func)
-    
+   
 if __name__ == '__main__':
     main()
 
 
 #%%
 #base_data = produce_base_data(load_data('data'))
-#z = np.load('inp/no_events/eval/4/device_model_freq_split.npy')
+#z = np.load('inp/no_events/train/0/device_model_mean_split.npy')
 

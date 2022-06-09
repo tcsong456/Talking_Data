@@ -65,4 +65,5 @@ class Timer:
         end_time = time()
         interval = end_time - self.start_time
         self.logger.info(f'took {interval:.5f} seconds to complete')
+        
         #%%
