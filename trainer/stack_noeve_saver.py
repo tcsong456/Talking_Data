@@ -2,9 +2,10 @@ import os
 import numpy as np
 import pandas as pd
 from collections import Counter
-from utils import logger
-from helper.helper_utils import (map_label,
-                                 assemble_mean_encodes)
+from utils import (logger,
+                   TARGET_COLS,
+                   build_label)
+from helper.helper_utils import assemble_mean_encodes
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import LabelEncoder
 from trainer.process_pbrand_model import find_middle
@@ -28,8 +29,6 @@ class BaseStackSaver:
                                 'le_split':self._le_split,
                                 'mean_split':self._mean_split,
                                 'freq_split':self._freq_split}
-        self.target_cols = ['M32-38', 'F27-28', 'M39+', 'M23-26', 'M27-28', 'M29-31', 'F33-42',
-                            'F43+', 'F24-26', 'F23-', 'F29-32', 'M22-']
     
     def _make_dirs(self):
         os.makedirs('inp/events',exist_ok=True)
@@ -62,17 +61,6 @@ class NoEventStackSaver(BaseStackSaver):
         events_app = self.data_dict['events'].merge(event_ids,on='event_id')
         dids = events_app.groupby('device_id').size().reset_index()[['device_id']]
         return dids
-    
-    def _label(self,dids):
-        if not type(dids) is pd.DataFrame:
-            dids = pd.DataFrame(dids,columns=['device_id'])
-        labels = dids.merge(self.train,how='left',on='device_id')
-        unique_group = np.array(self.target_cols)
-        labels_ = pd.DataFrame(np.zeros([labels.shape[0],len(unique_group)]),columns=unique_group)
-        labels = map_label(unique_group,labels,labels_)
-        labels['device_id'] = list(dids.values.flatten())
-        labels.set_index('device_id',inplace=True)
-        return labels
     
     def _train_test_split(self,pbrand,dmodel,slevel):
         phone_brand_tr = self.train_no_dids.merge(pbrand,how='left',on='device_id').set_index('device_id')
@@ -111,19 +99,19 @@ class NoEventStackSaver(BaseStackSaver):
         return le_encodeing_dict
     
     def _mean_split(self):
-        label = self._label(self.train.device_id)
+        label = build_label(self.train.device_id,self.train)
         label_ori = label.merge(self.phone_brand,how='left',on='device_id').reset_index()
         test = self.test.copy()
         test_ori = test.merge(self.phone_brand,how='left',on='device_id').reset_index()
-        ph_encodes = assemble_mean_encodes(label_ori,test_ori,'phone_brand',self.target_cols)
-        demodel_encodes = assemble_mean_encodes(label_ori,test_ori,'device_model',self.target_cols)
+        ph_encodes = assemble_mean_encodes(label_ori,test_ori,'phone_brand',TARGET_COLS)
+        demodel_encodes = assemble_mean_encodes(label_ori,test_ori,'device_model',TARGET_COLS)
         
         pbrand = self.phone_brand.copy()
         pbrand = find_middle(pbrand)
         pbrand['second_level'] = pbrand['device_model'].map(lambda row:row.split()[0])
         label_new = label.merge(pbrand,how='left',on='device_id').reset_index()
         test_new = test.merge(pbrand,how='left',on='device_id').reset_index()
-        slevel_encodes = assemble_mean_encodes(label_new,test_new,'second_level',self.target_cols)
+        slevel_encodes = assemble_mean_encodes(label_new,test_new,'second_level',TARGET_COLS)
         mean_encoding_dict = self._train_test_split(ph_encodes,demodel_encodes,slevel_encodes)
         return mean_encoding_dict
     

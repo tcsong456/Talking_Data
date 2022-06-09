@@ -6,14 +6,6 @@ from nltk.stem import PorterStemmer
 from collections.abc import Iterable
 from sklearn.model_selection import StratifiedKFold
 
-def map_label(ug,la,la_):
-    for i,row1 in la.iterrows():
-        g = row1['group']
-        idx = np.where(ug==g)[0][0]
-        c = ug[idx]
-        la_.loc[i,c] = 1
-    return la_
-
 def join_string(ls):
     assert isinstance(ls,Iterable)
     inside_dtype = [type(s) is str for s in ls]

@@ -10,6 +10,7 @@ __pycache__/
 data/*
 temp_data/*
 inp/*
+preds/*
 
 # Distribution / packaging
 .Python

@@ -23,7 +23,7 @@ class LightGBM:
         self.bst = bst
         return self
     
-    def fit_wo_validation(self,X_tr,y_tr):
+    def fit(self,X_tr,y_tr):
         d_train = lgb.Dataset(X_tr,label=y_tr)
         bst = lgb.train(self.params,
                         d_train,

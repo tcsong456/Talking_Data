@@ -1,5 +1,5 @@
-from models.lightgbm import LightGBM
-from models.nn import NN
-from models.logistic_regression import LR
+from .lightgbm import LightGBM
+from .nn import NN
+from .logistic_regression import LR
 
 #%%

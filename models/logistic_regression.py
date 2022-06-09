@@ -5,10 +5,12 @@ class LR:
                  penalty='l2',
                  C=10.0,
                  max_iter=100,
+                 solver='lbfgs',
                  multi_class='auto'):
         clf = LogisticRegression(penalty=penalty,
                                  max_iter=max_iter,
                                  C=C,
+                                 solver=solver,
                                  multi_class=multi_class)
         self.clf = clf
     
