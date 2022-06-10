@@ -5,24 +5,10 @@ warnings.filterwarnings(action='ignore')
 import numpy as np
 import pandas as pd
 from glob import glob
-from helper import (TopicCategory,
-                    TopicLabel,
-                    TopicTimeZoneLabel,
-                    TopicPbrandLabel,
-                    TopicApp,
-                    TopicTimeZoneApp,
-                    TopicPbrandApp,
-                    TopicCombineApp,
-                    TopicTimeZoneCombineApp,
-                    TopicPbrandCombineApp,
-                    produce_base_data)
 from utils import (logger,
-                   load_data,
                    Timer,
                    numpy_metric,
                    TARGET_COLS)
-from functools import partial
-from multiprocessing  import Pool
 from scipy.optimize import minimize
 from sklearn.linear_model import Ridge
 from trainer import (NoEventStackSaver,
@@ -30,22 +16,6 @@ from trainer import (NoEventStackSaver,
                      NNTrainer,
                      LRTrainer,
                      LgbTrainer)
-
-def save_topic_data(topic_func,data,args,cate_mode):
-    topic_func = topic_func()
-    class_name = topic_func.__class__.__name__.lower()
-    save_path = os.path.join(args.temp_data_path,class_name)
-    logger.info(f'creating dataset:{class_name}')
-    
-    if cate_mode:
-        data = topic_func(data)
-    else:
-        data,active_data = topic_func(data)
-        active_save_path = save_path + '_active.pkl'
-        active_data.to_pickle(active_save_path)
-    
-    save_path += '.pkl'
-    data.to_pickle(save_path)
 
 def linear_combine(alpha=100,path=''):
     ds_val,ds_te = [],[]
@@ -105,12 +75,46 @@ def optimize(inits,args):
     else:
         return pred_matrix,label
 
+def build_dataset(args,base_data):
+    running_params = {'batch_size':args.batch_size,
+                      'epochs':args.epochs,
+                      'lr':args.lr}
+    if args.mode == 'eve_submit':
+        no_eve_stacker = NoEventStackSaver(n_folds=args.n_folds,
+                                           data_dict=base_data,
+                                           random_state=args.random_state)
+    elif args.mode == 'no_eve_submit':
+        no_eve_stacker = WholeNoEventStackSaver(n_folds=args.n_folds,
+                                                data_dict=base_data,
+                                                random_state=args.random_state)
+        
+    with Timer(message='start building no_eve features'):
+        for split_func in ['le_split','oh_split','mean_split','freq_split']:
+            no_eve_stacker.save(split_func)
+    
+    for config_path in ['nn_noeve_1','nn_noeve_2','nn_noeve_3','nn_noeve_4','nn_noeve_5',
+                        'nn_noeve_6','nn_noeve_7','nn_noeve_11']:
+        nn_trainer = NNTrainer(data_dict=base_data,
+                               n_folds=args.n_folds,
+                               config_path=config_path,
+                               **running_params)
+        nn_trainer.submit(config_path)
+    
+    for config_path in ['lr_noeve_1','lr_noeve_2','lr_noeve_3','lr_noeve_4']:
+        lr_trainer = LRTrainer(data_dict=base_data,
+                               n_folds=args.n_folds,
+                               config_path=config_path)
+        lr_trainer.submit(config_path)
+    
+    for config_path in ['lgb_noeve_5','lgb_noeve_9','lgb_noeve_10' ]:
+        lgb_trainer = LgbTrainer(data_dict=base_data,
+                                 n_folds=args.n_folds,
+                                 config_path=config_path)
+        lgb_trainer.submit(config_path)
+
 def main():
     parser = argparse.ArgumentParser()
     add_argument = parser.add_argument
-    add_argument('--temp_data_path',type=str,default='temp_data',help='path to save topic feature data')
-    add_argument('--data_path',type=str,default='data',help='the path to load real data')
-    add_argument('--num_of_cores',type=int,default=5,help='number of cores to use for multiprocessing')
     add_argument('--n_folds',type=int,default=5)
     add_argument('--random_state',type=int,default=7951)
     add_argument('--mode',type=str,choices=['no_eve_submit','eve_submit'])
@@ -122,75 +126,30 @@ def main():
     add_argument('--pred_path',type=str,help='specific prediction used for submission',default=None)
     add_argument('--save_path',type=str,help='save prediciton at specified location',default=None)
     add_argument('--submit',action='store_true')
+    add_argument('--only_dataset',action='store_true')
     add_argument('--pred_store_path',type=str,default='inp/submission/val')
     args = parser.parse_args()
-    
-#    os.makedirs(args.temp_data_path,exist_ok=True)
-    data_dict = load_data(args.data_path)
-    base_data = produce_base_data(data_dict)
-    del data_dict
-#    running_params = {'batch_size':args.batch_size,
-#                      'epochs':args.epochs,
-#                      'lr':args.lr}
-#    topic_feature_list = [TopicLabel,TopicTimeZoneLabel,TopicPbrandLabel,TopicApp,
-#                          TopicTimeZoneApp,TopicPbrandApp,TopicCombineApp,TopicTimeZoneCombineApp,TopicPbrandCombineApp]
-#    save_topic_func = partial(save_topic_data,data=base_data,args=args,cate_mode=False)
-#    with Pool(args.num_of_cores) as pool:
-#        pool.map(save_topic_func,topic_feature_list)
-#        pool.close()
-#        pool.join()
-#    save_topic_data(TopicCategory,base_data,args,cate_mode=True)
-    
-#    if args.mode == 'eve_submit':
-#        no_eve_stacker = NoEventStackSaver(n_folds=args.n_folds,
-#                                           data_dict=base_data,
-#                                           random_state=args.random_state)
-#    elif args.mode == 'no_eve_submit':
-#        no_eve_stacker = WholeNoEventStackSaver(n_folds=args.n_folds,
-#                                                data_dict=base_data,
-#                                                random_state=args.random_state)
-#        
-#    with Timer(message='start building no_eve features'):
-#        for split_func in ['le_split','oh_split','mean_split','freq_split']:
-#            no_eve_stacker.save(split_func)
-    
-#    for config_path in ['nn_noeve_18','nn_noeve_19','nn_noeve_20']:
-#        nn_trainer = NNTrainer(data_dict=base_data,
-#                               n_folds=args.n_folds,
-#                               config_path=config_path,
-#                               **running_params)
-#        nn_trainer.submit(config_path)
-    
-#    for config_path in ['lr_noeve_2','lr_noeve_3','lr_noeve_4']:
-#        lr_trainer = LRTrainer(data_dict=base_data,
-#                               n_folds=args.n_folds,
-#                               config_path=config_path)
-#        lr_trainer.submit(config_path)
-    
-    for config_path in ['lgb_noeve_13' ]:
-        lgb_trainer = LgbTrainer(data_dict=base_data,
-                                 n_folds=args.n_folds,
-                                 config_path=config_path)
-        lgb_trainer.submit(config_path)
-    
-#    device_ids = np.load('device_id.npy')
-#    if args.optimize_result:
-#        _,coefs,args_val,args_te = linear_combine(100,args.pred_store_path)
-#        op = minimize(optimize,coefs,args=args_val,method='BFGS')
-#        preds_te,_ = optimize(op.x,args_te)
-#    elif args.pred_path:
-#        preds_te = np.load(f'preds/submission/test/{args.pred_path}.npy')
-#        preds_te = pd.DataFrame(preds_te,columns=TARGET_COLS)
-#    else:
-#        preds_te,*_ = linear_combine(100)
-#    preds_te = np.maximum(np.minimum(preds_te,1-10**-15),10**-15)
+
+    build_dataset(args,base_data)
+
+    device_ids = np.load('device_id.npy')
+    if args.optimize_result:    
+        _,coefs,args_val,args_te = linear_combine(100,args.pred_store_path)
+        op = minimize(optimize,coefs,args=args_val,method='BFGS')
+        preds_te,_ = optimize(op.x,args_te)
+    elif args.pred_path:
+        preds_te = np.load(f'preds/submission/test/{args.pred_path}.npy')
+        preds_te = pd.DataFrame(preds_te,columns=TARGET_COLS)
+    else:
+        preds_te,*_ = linear_combine(100)
+    preds_te = np.maximum(np.minimum(preds_te,1-10**-15),10**-15)
         
-#    if args.submit:
-#        preds_te = pd.DataFrame(preds_te,columns=TARGET_COLS)
-#        preds_te['device_id'] = device_ids
-#        preds_te.to_csv('submission.csv',index=False)
-#    else:
-#        np.save(args.save_path,preds_te)
+    if args.submit:
+        preds_te = pd.DataFrame(preds_te,columns=TARGET_COLS)
+        preds_te['device_id'] = device_ids
+        preds_te.to_csv('submission.csv',index=False)
+    else:
+        np.save(args.save_path,preds_te)
                        
 if __name__ == '__main__':
     main()

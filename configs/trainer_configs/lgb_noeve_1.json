@@ -1,0 +1,5 @@
+{"features":["device_model_freq_split",
+             "device_model_le_split",
+             "phone_brand_freq_split",
+             "phone_brand_le_split"]
+}

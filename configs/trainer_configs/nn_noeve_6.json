@@ -1,0 +1,6 @@
+{"features":["phone_brand_oh_split",
+             "device_model_oh_split",
+             "second_level_oh_split",
+             "phone_brand_mean_split",
+             "device_model_mean_split"]
+}

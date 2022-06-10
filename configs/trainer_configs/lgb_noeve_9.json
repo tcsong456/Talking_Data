@@ -1,0 +1,7 @@
+{"features":["device_model_freq_split",
+             "phone_brand_freq_split",
+             "second_level_freq_split",
+             "phone_brand_mean_split",
+             "device_model_mean_split",
+             "second_level_mean_split"]
+}
