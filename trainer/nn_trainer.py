@@ -41,6 +41,7 @@ class NNBase:
         self.train = data_dict['train']
         self.n_folds = n_folds
         self.pred_path = 'preds/submission'
+        self.save_device_name = ''
         
     def train_(self,dl,epoch):
         train_loss = 0
@@ -104,8 +105,8 @@ class NNBase:
                 label_path = os.path.join(path,label_name)
                 if not os.path.exists(label_path):
                     np.save(label_path,label)
-        if not os.path.exists('device_id.npy'):
-            np.save('device_id.npy',device_id)
+        if not os.path.exists(self.save_device_name):
+            np.save(self.save_device_name,device_id)
 
 class NNTrainer(NNBase):
     def __init__(self,
@@ -119,6 +120,7 @@ class NNTrainer(NNBase):
                          n_folds=n_folds,
                          config_path=config_path)
         root_path='inp/no_events'
+        self.save_device_name = 'device_noeve_id.npy'
         self.X,self.Y = {},{}
         for i in range(n_folds):
             cur_dir_tr = f'{root_path}/train/{i}'
