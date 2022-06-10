@@ -29,7 +29,7 @@ from trainer import (NoEventStackSaver,
                      WholeNoEventStackSaver,
                      NNTrainer,
                      LRTrainer,
-                     LightgbmTrainer)
+                     LgbTrainer)
 
 def save_topic_data(topic_func,data,args,cate_mode):
     topic_func = topic_func()
@@ -47,14 +47,14 @@ def save_topic_data(topic_func,data,args,cate_mode):
     save_path += '.pkl'
     data.to_pickle(save_path)
 
-def linear_combine(alpha=100):
+def linear_combine(alpha=100,path=''):
     ds_val,ds_te = [],[]
     model = Ridge(alpha=alpha)
-    path_val = 'preds/submission/val'
-    path_test = 'preds/submission/test'
+    path_val = path
+    path_test = path.replace('val','test')
 
     for file in glob(os.path.join(f'{path_val}/*')):
-        if 'label' not in file:
+        if 'label' not in file and file.endswith('.npy'):
             data_val = np.load(file)
             ds_val.append(data_val)
     for file in glob(os.path.join(f'{path_test}/*')):
@@ -120,12 +120,15 @@ def main():
     add_argument('--optimize_result',action='store_true',help='whether to optimize combined results or \
                  use specified predition')
     add_argument('--pred_path',type=str,help='specific prediction used for submission',default=None)
+    add_argument('--save_path',type=str,help='save prediciton at specified location',default=None)
+    add_argument('--submit',action='store_true')
+    add_argument('--pred_store_path',type=str,default='inp/submission/val')
     args = parser.parse_args()
     
 #    os.makedirs(args.temp_data_path,exist_ok=True)
-#    data_dict = load_data(args.data_path)
-#    base_data = produce_base_data(data_dict)
-#    del data_dict
+    data_dict = load_data(args.data_path)
+    base_data = produce_base_data(data_dict)
+    del data_dict
 #    running_params = {'batch_size':args.batch_size,
 #                      'epochs':args.epochs,
 #                      'lr':args.lr}
@@ -164,21 +167,30 @@ def main():
 #                               config_path=config_path)
 #        lr_trainer.submit(config_path)
     
+#    for config_path in ['lgb_noeve_11','lgb_noeve_12' ]:
+#        lgb_trainer = LgbTrainer(data_dict=base_data,
+#                                 n_folds=args.n_folds,
+#                                 config_path=config_path)
+#        lgb_trainer.submit(config_path)
+    
     device_ids = np.load('device_id.npy')
     if args.optimize_result:
-        _,coefs,args_val,args_te = linear_combine(100)
+        _,coefs,args_val,args_te = linear_combine(100,args.pred_store_path)
         op = minimize(optimize,coefs,args=args_val,method='BFGS')
         preds_te,_ = optimize(op.x,args_te)
     elif args.pred_path:
-        preds_te = np.load(f'preds/submission/test/{args.pred_path}')
+        preds_te = np.load(f'preds/submission/test/{args.pred_path}.npy')
         preds_te = pd.DataFrame(preds_te,columns=TARGET_COLS)
     else:
         preds_te,*_ = linear_combine(100)
-    
     preds_te = np.maximum(np.minimum(preds_te,1-10**-15),10**-15)
-    preds_te = pd.DataFrame(preds_te,columns=TARGET_COLS)
-    preds_te['device_id'] = device_ids
-    preds_te.to_csv('submission.csv',index=False)
+        
+    if args.submit:
+        preds_te = pd.DataFrame(preds_te,columns=TARGET_COLS)
+        preds_te['device_id'] = device_ids
+        preds_te.to_csv('submission.csv',index=False)
+    else:
+        np.save(args.save_path,preds_te)
                        
 if __name__ == '__main__':
     main()
@@ -186,8 +198,10 @@ if __name__ == '__main__':
 
 #%%
 #base_data = produce_base_data(load_data('data'))
-#z = np.load('preds/submission/val/label_nn.npy')
-    
-#x = np.random.rand(100,10)
-#y = np.random.rand(100)
-#xt = np.random.rand(30,10)
+lgb = np.load('preds/submission/lgb.npy')
+nn_lr = np.load('preds/submission/nn_lr.npy')
+sub = lgb * 0.35 + nn_lr * 0.65
+device_id = np.load('device_id.npy')
+sub = pd.DataFrame(sub,columns=TARGET_COLS)
+sub['device_id'] = device_id
+sub.to_csv('submission.csv',index=False)
