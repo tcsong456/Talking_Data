@@ -167,30 +167,30 @@ def main():
 #                               config_path=config_path)
 #        lr_trainer.submit(config_path)
     
-#    for config_path in ['lgb_noeve_11','lgb_noeve_12' ]:
-#        lgb_trainer = LgbTrainer(data_dict=base_data,
-#                                 n_folds=args.n_folds,
-#                                 config_path=config_path)
-#        lgb_trainer.submit(config_path)
+    for config_path in ['lgb_noeve_13' ]:
+        lgb_trainer = LgbTrainer(data_dict=base_data,
+                                 n_folds=args.n_folds,
+                                 config_path=config_path)
+        lgb_trainer.submit(config_path)
     
-    device_ids = np.load('device_id.npy')
-    if args.optimize_result:
-        _,coefs,args_val,args_te = linear_combine(100,args.pred_store_path)
-        op = minimize(optimize,coefs,args=args_val,method='BFGS')
-        preds_te,_ = optimize(op.x,args_te)
-    elif args.pred_path:
-        preds_te = np.load(f'preds/submission/test/{args.pred_path}.npy')
-        preds_te = pd.DataFrame(preds_te,columns=TARGET_COLS)
-    else:
-        preds_te,*_ = linear_combine(100)
-    preds_te = np.maximum(np.minimum(preds_te,1-10**-15),10**-15)
+#    device_ids = np.load('device_id.npy')
+#    if args.optimize_result:
+#        _,coefs,args_val,args_te = linear_combine(100,args.pred_store_path)
+#        op = minimize(optimize,coefs,args=args_val,method='BFGS')
+#        preds_te,_ = optimize(op.x,args_te)
+#    elif args.pred_path:
+#        preds_te = np.load(f'preds/submission/test/{args.pred_path}.npy')
+#        preds_te = pd.DataFrame(preds_te,columns=TARGET_COLS)
+#    else:
+#        preds_te,*_ = linear_combine(100)
+#    preds_te = np.maximum(np.minimum(preds_te,1-10**-15),10**-15)
         
-    if args.submit:
-        preds_te = pd.DataFrame(preds_te,columns=TARGET_COLS)
-        preds_te['device_id'] = device_ids
-        preds_te.to_csv('submission.csv',index=False)
-    else:
-        np.save(args.save_path,preds_te)
+#    if args.submit:
+#        preds_te = pd.DataFrame(preds_te,columns=TARGET_COLS)
+#        preds_te['device_id'] = device_ids
+#        preds_te.to_csv('submission.csv',index=False)
+#    else:
+#        np.save(args.save_path,preds_te)
                        
 if __name__ == '__main__':
     main()
@@ -198,10 +198,10 @@ if __name__ == '__main__':
 
 #%%
 #base_data = produce_base_data(load_data('data'))
-lgb = np.load('preds/submission/lgb.npy')
-nn_lr = np.load('preds/submission/nn_lr.npy')
-sub = lgb * 0.35 + nn_lr * 0.65
-device_id = np.load('device_id.npy')
-sub = pd.DataFrame(sub,columns=TARGET_COLS)
-sub['device_id'] = device_id
-sub.to_csv('submission.csv',index=False)
+#lgb = np.load('preds/submission/lgb.npy')
+#nn_lr = np.load('preds/submission/nn_lr.npy')
+#sub = lgb * 0.35 + nn_lr * 0.65
+#device_id = np.load('device_id.npy')
+#sub = pd.DataFrame(sub,columns=TARGET_COLS)
+#sub['device_id'] = device_id
+#sub.to_csv('submission.csv',index=False)
