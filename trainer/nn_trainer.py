@@ -1,13 +1,16 @@
 import os
 import json
+import pickle
 import numpy as np
+import pandas as pd
 from torch.optim import Adam
 from models import NN
 from utils import (logger,
-                   build_label,
                    tensor_metric,
-                   numpy_metric)
+                   numpy_metric,
+                   build_label)
 from torch.utils.data import Dataset,DataLoader
+from sklearn.preprocessing import MinMaxScaler
 
 class Ds(Dataset):
     def __init__(self,
@@ -35,10 +38,7 @@ class NNBase:
                  data_dict,
                  n_folds,
                  config_path):
-        with open(f'configs/trainer_configs/{config_path}.json') as f:
-            config = json.load(f)
-        self.features = config['features']
-        self.train = data_dict['train']
+        self.train = data_dict['train'].copy()
         self.n_folds = n_folds
         self.pred_path = 'preds/submission'
         self.save_device_name = ''
@@ -107,53 +107,6 @@ class NNBase:
                     np.save(label_path,label)
         if not os.path.exists(self.save_device_name):
             np.save(self.save_device_name,device_id)
-
-class NNTrainer(NNBase):
-    def __init__(self,
-                 data_dict,
-                 n_folds,
-                 config_path,
-                 batch_size=128,
-                 lr=0.001,
-                 epochs=5):
-        super().__init__(data_dict=data_dict,
-                         n_folds=n_folds,
-                         config_path=config_path)
-        root_path='inp/no_events'
-        self.save_device_name = 'device_noeve_id.npy'
-        self.X,self.Y = {},{}
-        for i in range(n_folds):
-            cur_dir_tr = f'{root_path}/train/{i}'
-            cur_dir_val = f'{root_path}/eval/{i}'
-            
-            x_tr,y_tr = self._assemble_features(cur_dir_tr,return_label=True)
-            x_val,y_val = self._assemble_features(cur_dir_val,return_label=True)
-            self.X[i] = [x_tr,x_val]
-            self.Y[i] = [y_tr,y_val]
-        
-        cur_dir_te = f'{root_path}/test'
-        x_te = self._assemble_features(cur_dir_te,return_label=False)
-        
-        self.batch_size = batch_size
-        self.lr = lr
-        self.epochs = epochs
-        self.x_te = x_te
-        self.root_path = root_path
-        
-    def _assemble_features(self,directory,return_label):
-        features = []
-        for feat in self.features:
-            if not feat.endswith('.npy'):
-                feat += '.npy'
-            feat = np.load(os.path.join(directory,feat))
-            features.append(feat)
-        features = np.concatenate(features,axis=1)
-        
-        if return_label:
-            dids = np.load(os.path.join(directory,'device_id.npy'))
-            label = build_label(dids,self.train)
-            return features,label
-        return features
     
     def submit(self,preds_str):
         if not preds_str.endswith('.npy'):
@@ -210,6 +163,56 @@ class NNTrainer(NNBase):
             
         self.save(preds_str,score_val,preds_val,preds_te,'label',labels_val,device_id)
 
+class NNTrainer(NNBase):
+    def __init__(self,
+                 data_dict,
+                 n_folds,
+                 config_path,
+                 batch_size=128,
+                 lr=0.001,
+                 epochs=5):
+        super().__init__(data_dict=data_dict,
+                         n_folds=n_folds,
+                         config_path=config_path)
+        with open(f'configs/no_eve_configs/{config_path}.json') as f:
+            config = json.load(f)
+        self.features = config['features']
+        root_path='inp/no_events'
+        self.save_device_name = 'device_noeve_id.npy'
+        self.X,self.Y = {},{}
+        for i in range(n_folds):
+            cur_dir_tr = f'{root_path}/train/{i}'
+            cur_dir_val = f'{root_path}/eval/{i}'
+            
+            x_tr,y_tr = self._assemble_features(cur_dir_tr,return_label=True)
+            x_val,y_val = self._assemble_features(cur_dir_val,return_label=True)
+            self.X[i] = [x_tr,x_val]
+            self.Y[i] = [y_tr,y_val]
+        
+        cur_dir_te = f'{root_path}/test'
+        x_te = self._assemble_features(cur_dir_te,return_label=False)
+        
+        self.batch_size = batch_size
+        self.lr = lr
+        self.epochs = epochs
+        self.x_te = x_te
+        self.root_path = root_path
+        
+    def _assemble_features(self,directory,return_label):
+        features = []
+        for feat in self.features:
+            if not feat.endswith('.npy'):
+                feat += '.npy'
+            feat = np.load(os.path.join(directory,feat))
+            features.append(feat)
+        features = np.concatenate(features,axis=1)
+        
+        if return_label:
+            dids = np.load(os.path.join(directory,'device_id.npy'))
+            label = build_label(dids,self.train)
+            return features,label
+        return features
+
 class NNEveTrainer(NNBase):
     def __init__(self,
              data_dict,
@@ -218,9 +221,83 @@ class NNEveTrainer(NNBase):
              batch_size=128,
              lr=0.001,
              epochs=5):
-    super().__init__(data_dict=data_dict,
-                     n_folds=n_folds,
-                     config_path=config_path)
+        super().__init__(data_dict=data_dict,
+                        n_folds=n_folds,
+                        config_path=config_path)
+        root_path='inp/events'
+        self.save_device_name = 'device_eve_id.npy'
+        self.X,self.Y = {},{}
+        with open(f'configs/eve_configs/{config_path}.json') as f:
+            config = json.load(f)
+        self.features = config['features']
+        self.extrainfo = config['extrainfo']
+        
+        self.aux_attrs = {}
+        for file in ['extrainfo','mean_split','oh_split']:
+            file += '.pkl'
+            load_dir = os.path.join(root_path,file)
+            with open(load_dir,'rb') as f:
+                self.aux_attrs[file[:-4]] = pickle.load(f)
+        
+        for i in range(self.n_folds):
+            cur_dir_tr = f'{root_path}/train/{i}'
+            cur_dir_te = f'{root_path}/eval/{i}'
+            x_tr,y_tr = self._assemble_features(cur_dir_tr,return_label=True,mode='train')
+            x_val,y_val = self._assemble_features(cur_dir_te,return_label=True,mode='train')
+            self.X[i] = [x_tr,x_val]
+            self.Y[i] = [y_tr,y_val]
+        cur_dir_te = f'{root_path}/test'
+        x_te = self._assemble_features(cur_dir_te,return_label=False,mode='test')
+        self.x_te = x_te
+        self.root_path = root_path
+        self.batch_size = batch_size
+        self.lr = lr
+        self.epochs = epochs
     
+    def _assemble_features(self,directory,return_label,mode):
+        dids = np.load(os.path.join(directory,'device_id.npy'))
+        dids = pd.DataFrame(dids,columns=['device_id'])
+        
+        topic_features = []
+        for feat in self.features:
+            feat += '.npy'
+            feat = np.load(os.path.join(directory,feat))
+            topic_features.append(feat)
+        topic_features = np.concatenate(topic_features,axis=1)
+        
+        mms = MinMaxScaler()
+        temp_features,temp_mms_features = [],[]
+        temporal_feat = self.extrainfo['temporal']
+        temporal_mms_feat = self.extrainfo['temporal_mms']
+        for temp,temp_mms in zip(temporal_feat,temporal_mms_feat):
+            temp_features.append(self.aux_attrs['extrainfo'][temp])
+            temp_mms_features.append(self.aux_attrs['extrainfo'][temp_mms])
+        temp_features = pd.concat(temp_features,axis=1)
+        temp_mms_features = pd.concat(temp_mms_features,axis=1)
+        temp_features = dids.merge(temp_features,how='left',on='device_id').set_index('device_id').values
+        temp_mms_features = dids.merge(temp_mms_features,how='left',on='device_id').set_index('device_id')
+        temp_mms_features = mms.fit_transform(temp_mms_features)
+        
+        brand_features = []
+        brand_feat = self.extrainfo['brand']
+        suffix = '_tr' if mode=='train' else '_te'
+        for f in brand_feat:
+            f_name = f.split('_',maxsplit=1)[1] + suffix
+            if 'oh' in f:
+                bf = self.aux_attrs['oh_split'][f_name]
+            elif 'mean' in f:
+                bf = self.aux_attrs['mean_split'][f_name]
+            brand_features.append(bf)
+        brand_features = pd.concat(brand_features,axis=1)
+        brand_features = dids.merge(brand_features,how='left',on='device_id').set_index('device_id').values
+        features = np.concatenate([topic_features,temp_features,temp_mms_features,brand_features],axis=1)
+        
+        if  return_label:
+            label = build_label(dids,self.train)
+            return features,label
+        return features
+        
+        
+        
 
     #%%

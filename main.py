@@ -79,7 +79,7 @@ def main():
     add_argument('--pred_path',type=str,help='specific prediction used for submission',default=None)
     add_argument('--save_path',type=str,help='save prediciton at specified location',default=None)
     add_argument('--submit',action='store_true')
-    add_argument('--pred_store_path',type=str,default='inp/submission/val')
+    add_argument('--pred_store_path',type=str,default='preds/submission/val')
     add_argument('--device_id_str',type=str,default='device_id.npy')
     args = parser.parse_args()
 
@@ -91,7 +91,7 @@ def main():
         preds_te = np.load(f'preds/submission/test/{args.pred_path}.npy')
         preds_te = pd.DataFrame(preds_te,columns=TARGET_COLS)
     else:
-        preds_te,*_ = linear_combine(100)
+        preds_te,*_ = linear_combine(100,args.pred_store_path)
     preds_te = np.maximum(np.minimum(preds_te,1-10**-15),10**-15)
         
     if args.submit:
@@ -107,5 +107,3 @@ if __name__ == '__main__':
 
 
 #%%
-#base_data = produce_base_data(load_data('data'))
-#z = np.load('preds/submission/val/nn_noeve_1_2.39738.npy')

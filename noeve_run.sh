@@ -1,4 +1,4 @@
-python auxiliary/generate_stack_preds.py --mode eve_submit --batch_size 256 --epochs 3
+python auxiliary/generate_noeve_preds.py --mode eve_submit --batch_size 256 --epochs 3
 
 root="preds/submission"
 for mode in 'val' 'test';do

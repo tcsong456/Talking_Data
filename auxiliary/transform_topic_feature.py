@@ -8,8 +8,8 @@ from utils import (
                    load_data)
 from multiprocessing import Pool
 from helper import produce_base_data
-from trainer import (auto_generate_dataset_names,
-                     EventStackSaver)
+from .stack_eve_saver import EventStackSaver
+from .trainer_utils import auto_generate_dataset_names
 
 class TransformFeature:
     def __init__(self,

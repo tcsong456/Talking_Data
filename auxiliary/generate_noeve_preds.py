@@ -1,11 +1,13 @@
 import argparse
 import warnings
+import sys
+sys.path.append('.')
 warnings.filterwarnings(action='ignore')
 from helper import produce_base_data
 from utils import load_data,Timer
-from trainer import (NoEventStackSaver,
-                     WholeNoEventStackSaver,
-                     NNTrainer,
+from .stack_noeve_saver import (NoEventStackSaver,
+                                WholeNoEventStackSaver)
+from trainer import (NNTrainer,
                      LRTrainer,
                      LgbTrainer)
 
@@ -14,14 +16,13 @@ if __name__ == '__main__':
     add_argument = parser.add_argument
     add_argument('--n_folds',type=int,default=5)
     add_argument('--random_state',type=int,default=7951)
-    add_argument('--data_path',type=str,default='data',help='the path to load real data')
     add_argument('--mode',type=str,choices=['no_eve_submit','eve_submit'])
     add_argument('--batch_size',type=int,default=128)
     add_argument('--lr',type=float,default=0.001)
     add_argument('--epochs',default=5,type=int)
     args = parser.parse_args()
     
-    data_dict = load_data(args.data_path)
+    data_dict = load_data('data')
     base_data = produce_base_data(data_dict)
     del data_dict
     
@@ -37,9 +38,9 @@ if __name__ == '__main__':
         no_eve_stacker = WholeNoEventStackSaver(**base_params,
                                                 random_state=args.random_state)
         
-#    with Timer(message='start building no_eve features'):
-#        for split_func in ['le_split','oh_split','mean_split','freq_split']:
-#            no_eve_stacker.save(split_func)
+    with Timer(message='start building no_eve features'):
+        for split_func in ['le_split','oh_split','mean_split','freq_split']:
+            no_eve_stacker.save(split_func)
     
     for config_path in ['nn_noeve_1','nn_noeve_2','nn_noeve_3','nn_noeve_4','nn_noeve_5',
                         'nn_noeve_6','nn_noeve_7','nn_noeve_11']:

@@ -1,11 +1,13 @@
 import os
+import sys
+sys.path.append('.')
 import pickle
 import warnings
 warnings.filterwarnings(action='ignore')
 import numpy as np
 import pandas as pd
 from helper import ExtraInfo
-from trainer import WholeNoEventStackSaver
+from .stack_noeve_saver import WholeNoEventStackSaver
 from .trainer_utils import (auto_detect_col,
                             generate_device_id)
 from sklearn.model_selection import KFold
