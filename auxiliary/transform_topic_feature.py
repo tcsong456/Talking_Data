@@ -8,8 +8,8 @@ from utils import (
                    load_data)
 from multiprocessing import Pool
 from helper import produce_base_data
-from .stack_eve_saver import EventStackSaver
-from .trainer_utils import auto_generate_dataset_names
+from trainer.stack_eve_saver import EventStackSaver
+from trainer.trainer_utils import auto_generate_dataset_names
 
 class TransformFeature:
     def __init__(self,
@@ -47,6 +47,7 @@ if __name__ == '__main__':
         pool.map(tf.build,file_names)
         pool.close()
         pool.join()
+    stacker.save_extra_attr()
                 
 #%%
 '''

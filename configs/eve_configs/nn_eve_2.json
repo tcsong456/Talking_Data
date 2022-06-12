@@ -1,0 +1,12 @@
+{"features":[
+             "app_tz_tfidf_15_1800",
+             "app_tz_count_15_binary_1800",
+             "label_brand_tfidf_15_950","label_count_5_binary"],
+ "extrainfo":{"temporal":["hour_mean","dow_mean",
+                          "present_device_ratio",
+                          "active_device_ratio"],
+              "temporal_mms":["geo_info","active_device","present_device"],
+              "brand":["mean_phone_brand",
+                       "mean_device_model",
+                       "mean_second_level"]}
+}

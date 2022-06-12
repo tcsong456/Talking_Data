@@ -5,7 +5,7 @@ sys.path.append('.')
 warnings.filterwarnings(action='ignore')
 from helper import produce_base_data
 from utils import load_data
-from trainer import NNEveTrainer
+from trainer import NNEveTrainer,NNEveProber
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -15,6 +15,7 @@ if __name__ == '__main__':
     add_argument('--batch_size',type=int,default=128)
     add_argument('--lr',type=float,default=0.001)
     add_argument('--epochs',default=5,type=int)
+    add_argument('--mode',type=str,choices=['eve_submit','eve_probe'])
     args = parser.parse_args()
     
     data_dict = load_data('data')
@@ -26,10 +27,15 @@ if __name__ == '__main__':
     nn_params = {'batch_size':args.batch_size,
                  'epochs':args.epochs,
                  'lr':args.lr}
-    for config_path in ['nn_eve_10']:
-        nn_trainer = NNEveTrainer(**base_params,
-                                   **nn_params,
-                                   config_path=config_path,)
+    for config_path in ['nn_eve_1']:
+        if args.mode == 'eve_submit':
+            nn_trainer = NNEveTrainer(**base_params,
+                                       **nn_params,
+                                       config_path=config_path)
+        else:
+            nn_trainer = NNEveProber(**base_params,
+                                       **nn_params,
+                                       config_path=config_path)
         nn_trainer.submit(config_path)
 
 

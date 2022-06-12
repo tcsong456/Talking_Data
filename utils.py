@@ -100,6 +100,6 @@ class Timer:
     def __exit__(self,*args,**kwargs):
         end_time = time()
         interval = end_time - self.start_time
-        self.logger.info(f'took {interval:.d} seconds to complete')
+        self.logger.info(f'took {interval:.0f} seconds to complete')
         
         #%%
