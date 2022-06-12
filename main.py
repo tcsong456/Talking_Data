@@ -108,4 +108,4 @@ if __name__ == '__main__':
 
 #%%
 #base_data = produce_base_data(load_data('data'))
-
+#z = np.load('preds/submission/val/nn_noeve_1_2.39738.npy')

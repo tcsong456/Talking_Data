@@ -37,9 +37,9 @@ if __name__ == '__main__':
         no_eve_stacker = WholeNoEventStackSaver(**base_params,
                                                 random_state=args.random_state)
         
-    with Timer(message='start building no_eve features'):
-        for split_func in ['le_split','oh_split','mean_split','freq_split']:
-            no_eve_stacker.save(split_func)
+#    with Timer(message='start building no_eve features'):
+#        for split_func in ['le_split','oh_split','mean_split','freq_split']:
+#            no_eve_stacker.save(split_func)
     
     for config_path in ['nn_noeve_1','nn_noeve_2','nn_noeve_3','nn_noeve_4','nn_noeve_5',
                         'nn_noeve_6','nn_noeve_7','nn_noeve_11']:

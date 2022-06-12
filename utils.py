@@ -72,7 +72,7 @@ def build_label(dids,train):
     return labels
 
 def tensor_metric(preds,y):
-    preds = torch.maximum(torch.minimum(preds,torch.Tensor([1-10**-15])),torch.Tensor([10**-15]))
+    preds = torch.maximum(torch.minimum(preds,torch.Tensor([1-10**-15]).cuda()),torch.Tensor([10**-15]).cuda())
     preds = preds / preds.sum(axis=1)[:,None]
     preds = torch.log(preds)
     score = -(y * preds).sum() / preds.shape[0]
@@ -100,6 +100,6 @@ class Timer:
     def __exit__(self,*args,**kwargs):
         end_time = time()
         interval = end_time - self.start_time
-        self.logger.info(f'took {interval:.5f} seconds to complete')
+        self.logger.info(f'took {interval:.d} seconds to complete')
         
         #%%

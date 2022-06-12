@@ -17,6 +17,7 @@ def consolidate_noeve():
     consolidated_result['device_id'] = device_id
     consolidated_result.to_csv('noeve_result.csv',index=False)
     rmtree('preds')
+    os.remove('device_noeve_id.npy')
 
 if __name__ == '__main__':
     consolidate_noeve()

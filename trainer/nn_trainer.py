@@ -46,7 +46,7 @@ class NNBase:
     def train_(self,dl,epoch):
         train_loss = 0
         for step,batch in enumerate(dl):
-            b,y = batch
+            b,y = batch;b,y = b.cuda(),y.cuda()
             preds = self.model(b)
             loss = tensor_metric(preds,y)
             self.optimizer.zero_grad()
@@ -60,10 +60,10 @@ class NNBase:
         total_loss = 0
         ps,ys = [],[]
         for step,batch in enumerate(dl):
-            b,y = batch
+            b,y = batch;b,y = b.cuda(),y.cuda()
             preds = self.model(b)
-            ps.append(preds.detach().numpy())
-            ys.append(y.detach().numpy())
+            ps.append(preds.detach().cpu().numpy())
+            ys.append(y.detach().cpu().numpy())
             loss = tensor_metric(preds,y)
             total_loss += loss.item()
         avg_loss = total_loss / (step + 1)
@@ -74,10 +74,10 @@ class NNBase:
     def predict_wo_label(self,dl):
         ps,dids = [],[]
         for step,batch in enumerate(dl):
-            b,ids = batch
+            b,ids = batch;b = b.cuda()
             preds = self.model(b)
             dids.append(ids)
-            ps.append(preds.detach().numpy())
+            ps.append(preds.detach().cpu().numpy())
         ps = np.concatenate(ps)
         dids = np.concatenate(dids).flatten()
         return ps,dids
@@ -171,7 +171,7 @@ class NNTrainer(NNBase):
             self.model = NN(input_dim=input_size,
                             hidden_size_1=512,
                             hidden_size_2=128,
-                            output_size=12)
+                            output_size=12).cuda()
             params = filter(lambda x:x.requires_grad,self.model.parameters())
             self.optimizer = Adam(params,lr=self.lr)
             
@@ -188,10 +188,10 @@ class NNTrainer(NNBase):
                 if eval_loss < self.best_loss:
                     ps_val = np.zeros([pred_val.shape[0],12])
                     ps_te = np.zeros([pred_te.shape[0],12])
-                    for _ in range(5):
+                    for _ in range(10):
                         pred_val,_,_ = self.predict(dl=dl_val)
                         ps_val += pred_val
-                    for _ in range(3):
+                    for _ in range(5):
                         pred_te,_ = self.predict_wo_label(dl=dl_te)
                         ps_te += pred_te
                     ps_val /= 5;ps_te /= 3
@@ -209,5 +209,18 @@ class NNTrainer(NNBase):
         logger.info(f'eval score:{score_val:.5f}')
             
         self.save(preds_str,score_val,preds_val,preds_te,'label',labels_val,device_id)
+
+class NNEveTrainer(NNBase):
+    def __init__(self,
+             data_dict,
+             n_folds,
+             config_path,
+             batch_size=128,
+             lr=0.001,
+             epochs=5):
+    super().__init__(data_dict=data_dict,
+                     n_folds=n_folds,
+                     config_path=config_path)
+    
 
     #%%

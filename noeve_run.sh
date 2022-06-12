@@ -1,4 +1,4 @@
-python generate_stack_preds.py --mode no_eve_submit --batch_size 256 --epochs 3
+python auxiliary/generate_stack_preds.py --mode eve_submit --batch_size 256 --epochs 3
 
 root="preds/submission"
 for mode in 'val' 'test';do
@@ -28,4 +28,4 @@ python main.py --optimize_result --save_path preds/submission/no_eve_nnlr.npy \
 python main.py --optimize_result --save_path preds/submission/no_eve_lgb.npy \
 --pred_store_path preds/submission/val/lgb
 
-python consolidate_noeve.py
+python auxiliary/consolidate_noeve.py

@@ -33,7 +33,7 @@ class BaseStackSaver:
     def _make_dirs(self):
         os.makedirs('inp/events',exist_ok=True)
         os.makedirs('inp/no_events',exist_ok=True)
-        for sub_folder in ['train','eval','test']:
+        for sub_folder in ['train','val','test']:
             for cur in ['inp/events','inp/no_events']:
                 build_folder = os.path.join(cur,sub_folder)
                 os.makedirs(build_folder,exist_ok=True)
@@ -152,7 +152,7 @@ class NoEventStackSaver(BaseStackSaver):
         kf = KFold(n_splits=self.n_folds,random_state=self.random_state,shuffle=False)
         for i,(ind_tr,ind_val) in enumerate(kf.split(self.split_dids)):
             cur_dir_tr = f'inp/no_events/train/{i}'
-            cur_dir_val = f'inp/no_events/eval/{i}'
+            cur_dir_val = f'inp/no_events/val/{i}'
             os.makedirs(cur_dir_tr,exist_ok=True)
             os.makedirs(cur_dir_val,exist_ok=True)
             

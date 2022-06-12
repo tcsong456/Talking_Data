@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 from functools import partial
 from helper.helper_utils import (join_string,
                                  temporal_prefix)
@@ -161,5 +163,44 @@ class TopicPbrandCombineApp(BaseTopicCombineApp):
         device_active_pbrand_combine_app = self.all_device_id.merge(device_active_pbrand_combine_app,how='left',on='device_id').fillna('')
         device_active_pbrand_combine_app = device_active_pbrand_combine_app.set_index('device_id')['app_id']
         return device_pbrand_combine_app,device_active_pbrand_combine_app
+    
+class ExtraInfo:
+    def __call__(self,data_dict):
+        result_dict = {}
+        
+        events = data_dict['events'].copy()
+        dow_cnt = events.pivot_table(columns='dow',values='cnt',index='device_id',aggfunc='sum').fillna(0)
+        dow_ratio = dow_cnt / dow_cnt.sum(axis=1)[:,None]
+        dow_mean = events.pivot_table(columns='dow',values='cnt',index='device_id',aggfunc='mean').fillna(0)
+        hour_cnt = events.pivot_table(columns='hour',values='cnt',index='device_id',aggfunc='sum').fillna(0)
+        hour_mean = events.pivot_table(columns='hour',values='cnt',index='device_id',aggfunc='mean').fillna(0)
+        hour_ratio = hour_cnt / hour_cnt.sum(axis=1)[:,None]
+        
+        events['longitude'] = events['longitude'].replace(0,np.nan)
+        events['latitude'] = events['latitude'].replace(0,np.nan)
+        longitude = events.groupby('device_id')['longitude'].mean()
+        latitude = events.groupby('device_id')['latitude'].mean()
+        geo_info = pd.concat([longitude,latitude],axis=1).fillna(0)
+        
+        app_events = data_dict['app_events'].copy()
+        active_events = app_events.groupby('event_id')['is_active'].sum()
+        events_active = events.merge(active_events,how='left',on='event_id')
+        event_cnt = app_events.groupby('event_id').size().to_frame('event_cnt')
+        events_cnt = events.merge(event_cnt,how='left',on='event_id')
+        events_cnt = events_cnt.groupby('device_id')['event_cnt'].sum()
+        active_device = events_active.groupby('device_id')['is_active'].sum()
+        active_device_ = pd.concat([active_device,events_cnt],axis=1)
+        active_device_ratio = (active_device_['is_active'] / active_device_['event_cnt']).to_frame('active_device_ratio')
+        events_active['present'] = 0
+        events_active.loc[~pd.isnull(events_active['is_active']),'present'] = 1
+        present_device = events_active.groupby('device_id')['present'].sum()
+        present_device_ratio = events_active.groupby('device_id')['present'].mean()
+        
+        data_names = ['dow_cnt','dow_ratio','dow_mean','hour_cnt','hour_mean','hour_ratio','geo_info',
+                      'active_device','present_device','present_device_ratio','active_device_ratio']
+        lc = locals()
+        for name in data_names:
+            result_dict[name] = lc[name].astype(np.float32)
+        return result_dict
 
 #%%
