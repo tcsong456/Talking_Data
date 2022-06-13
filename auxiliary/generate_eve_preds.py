@@ -27,7 +27,8 @@ if __name__ == '__main__':
     nn_params = {'batch_size':args.batch_size,
                  'epochs':args.epochs,
                  'lr':args.lr}
-    for config_path in ['nn_eve_1']:
+    for i in range(1,11):
+        config_path = f'nn_eve_{i}'
         if args.mode == 'eve_submit':
             nn_trainer = NNEveTrainer(**base_params,
                                        **nn_params,

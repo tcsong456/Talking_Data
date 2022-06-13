@@ -5,8 +5,8 @@ sys.path.append('.')
 warnings.filterwarnings(action='ignore')
 from helper import produce_base_data
 from utils import load_data,Timer
-from .stack_noeve_saver import (NoEventStackSaver,
-                                WholeNoEventStackSaver)
+from trainer.stack_noeve_saver import (NoEventStackSaver,
+                                       WholeNoEventStackSaver)
 from trainer import (NNTrainer,
                      LRTrainer,
                      LgbTrainer)

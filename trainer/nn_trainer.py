@@ -96,30 +96,11 @@ class NNBase:
         else:
             device_id_path = os.path.join(self.root_path,mode)
             
-        dids_eve = np.load(os.path.join(device_id_path,'device_eve_id.npy'))
-        dids_noeve = np.load(os.path.join(device_id_path,'device_noeve_id.npy'))
-        dids = np.concatenate([dids_eve,dids_noeve])
-        
+        dids = np.load(os.path.join(device_id_path,'device_id.npy'))
         dataset = Ds(x,dids,y)
         dl = DataLoader(dataset,batch_size=self.batch_size,shuffle=shuffle)
         return dl
-    
-    def save(self,preds_str,score_val,preds_val,preds_te,label_name,labels_val,device_id):
-        for path,data,label in zip([f'{self.pred_path}/val',f'{self.pred_path}/test'],[preds_val,preds_te],
-                                   [labels_val,[]]):
-            os.makedirs(path,exist_ok=True)
-            logger.info(f'saveing predictions to {path}')
-            preds_str_ = preds_str[:-4] + f'_{score_val:.5f}.npy'
-            np.save(os.path.join(path,preds_str_),data)
-            if len(label) > 0:
-                if not label_name.endswith('.npy'):
-                    label_name += '.npy'
-                label_path = os.path.join(path,label_name)
-                if not os.path.exists(label_path):
-                    np.save(label_path,label)
-        if not os.path.exists(self.save_device_name):
-            np.save(self.save_device_name,device_id)
-    
+
     def submit(self,preds_str):
         if not preds_str.endswith('.npy'):
             preds_str += '.npy'
@@ -159,10 +140,11 @@ class NNBase:
                     for _ in range(5):
                         pred_te,_ = self.predict_wo_label(dl=dl_te)
                         ps_te += pred_te
-                    ps_val /= 5;ps_te /= 3
+                    ps_val /= 10;ps_te /= 5
+                    
                     self.best_loss = eval_loss
                     self.best_preds_val = ps_val
-                    self.best_preds_te = pred_te
+                    self.best_preds_te = ps_te
             preds_val.append(self.best_preds_val)
             labels_val.append(yval)
             preds_te += self.best_preds_te
@@ -173,7 +155,18 @@ class NNBase:
         score_val = numpy_metric(preds_val,labels_val)
         logger.info(f'eval score:{score_val:.5f}')
             
-        self.save(preds_str,score_val,preds_val,preds_te,'label',labels_val,device_id)
+        for path,data,label in zip([f'{self.pred_path}/val',f'{self.pred_path}/test'],[preds_val,preds_te],
+                                   [labels_val,[]]):
+            os.makedirs(path,exist_ok=True)
+            logger.info(f'saveing predictions to {path}')
+            preds_str_ = preds_str[:-4] + f'_{score_val:.5f}.npy'
+            np.save(os.path.join(path,preds_str_),data)
+            if len(label) > 0:
+                label_path = os.path.join(path,'label.npy')
+                if not os.path.exists(label_path):
+                    np.save(label_path,label)
+        if not os.path.exists(self.save_device_name):
+            np.save(self.save_device_name,device_id)
 
 class NNTrainer(NNBase):
     def __init__(self,
@@ -197,7 +190,7 @@ class NNTrainer(NNBase):
         self.X,self.Y = {},{}
         for i in range(n_folds):
             cur_dir_tr = f'{root_path}/train/{i}'
-            cur_dir_val = f'{root_path}/eval/{i}'
+            cur_dir_val = f'{root_path}/val/{i}'
             
             x_tr,y_tr = self._assemble_features(cur_dir_tr,return_label=True)
             x_val,y_val = self._assemble_features(cur_dir_val,return_label=True)
@@ -265,6 +258,17 @@ class NNEveTrainer(NNBase):
         self.x_te = x_te
         self.root_path = root_path
     
+    def build_loader(self,x,y=None,ind=None,mode='train',shuffle=False):
+        if ind is not None:
+            device_id_path = os.path.join(self.root_path,mode,str(ind))
+        else:
+            device_id_path = os.path.join(self.root_path,mode)
+            
+        dids = np.load(os.path.join(device_id_path,'device_eve_id.npy'))
+        dataset = Ds(x,dids,y)
+        dl = DataLoader(dataset,batch_size=self.batch_size,shuffle=shuffle)
+        return dl
+    
     def _generate_extra_features(self,x,dids,mode):
         mms = MinMaxScaler()
         temp_features,temp_mms_features = [],[]
@@ -295,7 +299,7 @@ class NNEveTrainer(NNBase):
         return features
     
     def _assemble_features(self,directory,return_label,mode):
-        dids = np.load(os.path.join(directory,'device_id.npy'))
+        dids = np.load(os.path.join(directory,'device_eve_id.npy'))
         dids = pd.DataFrame(dids,columns=['device_id'])
 
         topic_features = []
@@ -325,6 +329,20 @@ class NNEveProber(NNEveTrainer):
                          batch_size=batch_size,
                          lr=lr,
                          epochs=epochs)
+    
+    def build_loader(self,x,y=None,ind=None,mode='train',shuffle=False):
+        if ind is not None:
+            device_id_path = os.path.join(self.root_path,mode,str(ind))
+        else:
+            device_id_path = os.path.join(self.root_path,mode)
+            
+        dids_eve = np.load(os.path.join(device_id_path,'device_eve_id.npy'))
+        dids_noeve = np.load(os.path.join(device_id_path,'device_noeve_id.npy'))
+        dids = np.concatenate([dids_eve,dids_noeve])
+        
+        dataset = Ds(x,dids,y)
+        dl = DataLoader(dataset,batch_size=self.batch_size,shuffle=shuffle)
+        return dl
         
     def _assemble_features(self,directory,return_label,mode): 
         dids_eve = np.load(os.path.join(directory,'device_eve_id.npy'))

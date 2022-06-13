@@ -12,7 +12,7 @@ class BaseTrainer:
                  data_dict,
                  n_folds,
                  config_path):
-        with open(f'configs/trainer_configs/{config_path}.json') as f:
+        with open(f'configs/no_eve_configs/{config_path}.json') as f:
             config = json.load(f)
         self.features = config['features']
         self.train = data_dict['train']
@@ -71,7 +71,7 @@ class Trainer(BaseTrainer):
         
         for i in range(n_folds):
             cur_dir_tr = f'{root_path}/train/{i}'
-            cur_dir_val = f'{root_path}/eval/{i}'
+            cur_dir_val = f'{root_path}/val/{i}'
             x_tr,y_tr = self.assemble_features(cur_dir_tr,return_label=True)
             x_val,y_val = self.assemble_features(cur_dir_val,return_label=True)
             tmp[i] = [x_tr,x_val]

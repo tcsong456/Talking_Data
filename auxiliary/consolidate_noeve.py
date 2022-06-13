@@ -1,4 +1,6 @@
 import os
+import sys
+sys.path.append('.')
 import numpy as np
 import pandas as pd
 from shutil import rmtree
@@ -24,4 +26,11 @@ if __name__ == '__main__':
     
 
 #%%
-
+from utils import TARGET_COLS
+z = np.load('preds/eve_preds.npy')
+dids_eve = np.load('inp/events/test/device_eve_id.npy')
+dids_noeve = np.load('inp/events/test/device_noeve_id.npy')
+dids = np.concatenate([dids_eve,dids_noeve])
+z = pd.DataFrame(z,columns=TARGET_COLS)
+z['device_id'] = dids
+z.to_csv('submission1.csv',index=False)
