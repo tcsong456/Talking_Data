@@ -38,6 +38,7 @@ if __name__ == '__main__':
     add_argument = parser.add_argument
     add_argument('--data_path',type=str,default='data',help='the path to load real data')
     add_argument('--temp_data_path',type=str,default='temp_data',help='path to save topic feature data')
+    add_argument('--use_multiprocess',action='store_true')
     add_argument('--num_of_cores',type=int,default=5,help='number of cores to use for multiprocessing')
     args = parser.parse_args()
     
@@ -48,10 +49,16 @@ if __name__ == '__main__':
 
     topic_feature_list = [TopicLabel,TopicTimeZoneLabel,TopicPbrandLabel,TopicApp,
                           TopicTimeZoneApp,TopicPbrandApp,TopicCombineApp,TopicTimeZoneCombineApp,TopicPbrandCombineApp]
-    save_topic_func = partial(save_topic_data,data=base_data,args=args,cate_mode=False)
-    with Timer(message='Starting building topic features'):
-        with Pool(args.num_of_cores) as pool:
-            pool.map(save_topic_func,topic_feature_list)
-            pool.close()
-            pool.join()
-        save_topic_data(TopicCategory,base_data,args,cate_mode=True)
+    if args.use_multiprocess:
+        save_topic_func = partial(save_topic_data,data=base_data,args=args,cate_mode=False)
+        with Timer(message='Starting building topic features'):
+            with Pool(args.num_of_cores) as pool:
+                pool.map(save_topic_func,topic_feature_list)
+                pool.close()
+                pool.join()
+            save_topic_data(TopicCategory,base_data,args,cate_mode=True)
+    else:
+        for tfl in topic_feature_list:
+            save_topic_data(tfl,base_data,args,cate_mode=True)
+        
+        
