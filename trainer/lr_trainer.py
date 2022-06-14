@@ -18,7 +18,7 @@ class BaseTrainer:
         self.n_folds = n_folds
         self.pred_path = 'preds/submission'
         root_path='inp/no_events'
-        self.rooth_path = root_path
+        self.root_path = root_path
         
     def assemble_features(self,directory,return_label):
         features = []

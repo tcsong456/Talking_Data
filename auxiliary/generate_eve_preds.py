@@ -33,7 +33,7 @@ if __name__ == '__main__':
             nn_trainer = NNEveTrainer(**base_params,
                                        **nn_params,
                                        config_path=config_path)
-        else:
+        elif args.mode == 'eve_probe':
             nn_trainer = NNEveProber(**base_params,
                                        **nn_params,
                                        config_path=config_path)

@@ -1,4 +1,6 @@
 import os
+import sys
+sys.path.append('.')
 import argparse
 from functools import partial
 from multiprocessing  import Pool
@@ -56,9 +58,9 @@ if __name__ == '__main__':
                 pool.map(save_topic_func,topic_feature_list)
                 pool.close()
                 pool.join()
-            save_topic_data(TopicCategory,base_data,args,cate_mode=True)
     else:
         for tfl in topic_feature_list:
-            save_topic_data(tfl,base_data,args,cate_mode=True)
+            save_topic_data(tfl,base_data,args,cate_mode=False)
+    save_topic_data(TopicCategory,base_data,args,cate_mode=True)
         
         

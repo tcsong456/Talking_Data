@@ -158,7 +158,7 @@ class NNBase:
         for path,data,label in zip([f'{self.pred_path}/val',f'{self.pred_path}/test'],[preds_val,preds_te],
                                    [labels_val,[]]):
             os.makedirs(path,exist_ok=True)
-            logger.info(f'saveing predictions to {path}')
+            logger.info(f'saving predictions to {path}')
             preds_str_ = preds_str[:-4] + f'_{score_val:.5f}.npy'
             np.save(os.path.join(path,preds_str_),data)
             if len(label) > 0:
