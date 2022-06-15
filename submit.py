@@ -21,8 +21,8 @@ if __name__ == '__main__':
     
     eve_preds = eve_preds_frame()
     if args.mode == 'final_submit':
-        noeve_preds = pd.read_csv('noeve_result.csv').set_index('device_id')
-        s = pd.concat([eve_preds,noeve_preds])
+        noeve_preds = pd.read_csv('noeve_result.csv')
+        s = pd.concat([eve_preds,noeve_preds]).set_index('device_id')
         s1 = pd.read_csv('submission_eve.csv',index_col='device_id')
         sub = s * 0.5 + s1 * 0.5
         sub.reset_index().to_csv('submission.csv',index=False)

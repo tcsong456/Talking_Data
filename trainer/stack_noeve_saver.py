@@ -149,7 +149,7 @@ class NoEventStackSaver(BaseStackSaver):
     def save(self,split_func):
         logger.info(f'saving {split_func} features')
         split_data_dict = self.split_func_maps[split_func]()
-        kf = KFold(n_splits=self.n_folds,random_state=self.random_state,shuffle=False)
+        kf = KFold(n_splits=self.n_folds,random_state=self.random_state,shuffle=True)
         for i,(ind_tr,ind_val) in enumerate(kf.split(self.split_dids)):
             cur_dir_tr = f'inp/no_events/train/{i}'
             cur_dir_val = f'inp/no_events/val/{i}'

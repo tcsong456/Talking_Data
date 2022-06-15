@@ -25,8 +25,8 @@ done
 
 python main.py --optimize_result --save_path preds/submission/no_eve_nnlr.npy \
 --pred_store_path preds/submission/val/nn_lr
-
+echo "successfully saved optimized result to nn_lr"
 python main.py --optimize_result --save_path preds/submission/no_eve_lgb.npy \
 --pred_store_path preds/submission/val/lgb
-
+echo "successfully saved optimized result to lgb"
 python auxiliary/consolidate_noeve.py

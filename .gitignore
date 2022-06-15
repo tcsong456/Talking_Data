@@ -12,6 +12,7 @@ temp_data/*
 inp/*
 preds/*
 *.csv
+kaggle.json
 
 # Distribution / packaging
 .Python

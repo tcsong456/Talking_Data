@@ -62,7 +62,6 @@ class NNBase:
             self.optimizer.step()
             train_loss += loss.item()
         avg_loss = train_loss / (step + 1)
-        logger.info(f'epoch:{epoch} train_loss:{avg_loss:.5f}')
     
     def predict(self,dl):
         total_loss = 0
@@ -129,7 +128,6 @@ class NNBase:
                 self.train_(dl_tr,epoch=epoch)
                 pred_val,yval,eval_loss = self.predict(dl=dl_val)
                 pred_te,device_id = self.predict_wo_label(dl=dl_te)
-                logger.info(f'epoch:{epoch} eval loss:{eval_loss:.5f}\n')
                 
                 if eval_loss < self.best_loss:
                     ps_val = np.zeros([pred_val.shape[0],12])
